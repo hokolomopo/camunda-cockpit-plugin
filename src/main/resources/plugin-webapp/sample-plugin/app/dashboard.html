@@ -1,0 +1,202 @@
+<style>
+  .styled {
+    border: 0;
+    line-height: 2.5;
+    padding: 0 20px;
+    font-size: 1rem;
+    text-align: center;
+    color: #fff;
+    text-shadow: 1px 1px 1px #000;
+    border-radius: 10px;
+    background-color: rgba(220, 0, 0, 1);
+    background-image: linear-gradient(to top left,
+    rgba(0, 0, 0, .2),
+    rgba(0, 0, 0, .2) 30%,
+    rgba(0, 0, 0, 0));
+    box-shadow: inset 2px 2px 3px rgba(255, 255, 255, .6),
+    inset -2px -2px 3px rgba(0, 0, 0, .6);
+  }
+
+  .styled:hover {
+    background-color: rgba(255, 0, 0, 1);
+  }
+
+  .styled:active {
+    box-shadow: inset -2px -2px 3px rgba(255, 255, 255, .6),
+    inset 2px 2px 3px rgba(0, 0, 0, .6);
+  }
+
+  .collapsible {
+    background-color: #777;
+    color: white;
+    cursor: pointer;
+    padding: 18px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+  }
+
+  .active, .collapsible:hover {
+    background-color: #555;
+  }
+
+  .content {
+    padding: 0 18px;
+    display: none;
+    overflow: hidden;
+    background-color: #f1f1f1;
+  }
+
+  .checkmark-icon {
+    display:inline-block;
+    width: 22px;
+    height:22px;
+    background: green;
+    border-radius:50%;
+    -ms-transform: rotate(45deg); /* IE 9 */
+    -webkit-transform: rotate(45deg); /* Chrome, Safari, Opera */
+    transform: rotate(45deg);
+  }
+
+  .checkmark-icon:before{
+    content:"";
+    position: absolute;
+    width:3px;
+    height:9px;
+    background-color:#fff;
+    left:11px;
+    top:6px;
+  }
+
+  .checkmark-icon:after{
+    content:"";
+    position: absolute;
+    width:3px;
+    height:3px;
+    background-color:#fff;
+    left:8px;
+    top:12px;
+  }
+
+  .cross-icon
+  {
+    display:inline-block;
+    box-sizing:border-box;
+    width:22px;
+    height:22px;
+    border-width:3px;
+    border-style: solid;
+    border-color:red;
+    border-radius:100%;
+    background: -webkit-linear-gradient(-45deg, transparent 0%, transparent 46%, white 46%,  white 56%,transparent 56%, transparent 100%), -webkit-linear-gradient(45deg, transparent 0%, transparent 46%, white 46%,  white 56%,transparent 56%, transparent 100%);
+    background-color:red;
+  }
+
+</style>
+
+<div>
+
+  <div class="modal-body">
+    <select ng-model="varName">
+      <option value="rrnr">Rrnr</option>
+      <option value="uuid">Uuid</option>
+      <option value="nameT0">Name (AuditableT0)</option>
+      <option value="nameT1">Name (AuditableT1)</option>
+      <option value="auditorId">Auditor Id</option>
+      <option value="auditorId">Auditor Id</option>
+    </select>
+    <input ng-model="varValue" type="text"/>
+    <button ng-click="submit()" class="favorite styled"  type="button">
+      Search
+    </button>
+  </div>
+
+  <div>
+    <div data-ng-repeat="data in stateData">
+      <button class="collapsible" ng-click="handleClick($event)">AuditableT0 processed on {{data.auditableT0State.processingDate}}    <span ng-class="data.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></span> </button>
+      <div class="content">
+        <p>Uuid : {{data.auditableT0State.auditableT0Id.uuidT0}}</p>
+        <p>userId : {{data.auditableT0State.auditableT0Id.userId}}</p>
+        <p>wgnr : {{data.auditableT0State.auditableT0Id.wgnr}}</p>
+        <p>Name : {{data.auditableT0State.auditableT0Id.nameT0}}</p>
+
+
+        <button class="collapsible" ng-click="handleClick($event)">State of Processing :  <span ng-class="data.auditableT0State.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></span></button>
+        <div class="content">
+          <p>Auditable Merged :  <span ng-class="data.auditableT0State.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></span></p>
+          <p>Dao Merged :  <span ng-class="data.auditableT0State.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></span></p>
+          <p>Postits Updated : <span ng-class="data.auditableT0State.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></span></p>
+        </div>
+        <br><br>
+
+        <div ng-if="data.auditableT1States.length > 0">
+          <button class="collapsible" ng-click="handleClick($event)">AuditableT1s</button>
+          <div class="content">
+            <div data-ng-repeat="t1 in data.auditableT1States">
+              <button class="collapsible" ng-click="handleClick($event)">AuditableT1 processed on {{t1.processingDate}}</button>
+              <div class="content">
+                <p>Uuid : {{t1.auditableT1Id.uuidT1}}</p>
+                <p>Rrnr : {{t1.auditableT1Id.rrnr}}</p>
+                <p>Sis Number : {{t1.auditableT1Id.sisnumber}}</p>
+                <p>Name : {{t1.auditableT1Id.nameT1}}</p>
+                <p>Wn Number : {{t1.auditableT1Id.wnnumber}}</p>
+
+                <button class="collapsible" ng-click="handleClick($event)">State of Processing : <span ng-class="t1.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></button>
+                <div class="content">
+                  <p>Auditable Merged :  <span ng-class="t1.auditableMerged ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <p>Dao Merged :  <span ng-class="t1.daoMerged ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <p>Postits Updated :  <span ng-class="t1.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <p>Reports Updated :  <span ng-class="t1.reportsUpdated ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <p>ReintegrationController done :  <span ng-class="t1.reintegrationController ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <p>SynchroController Done :  <span ng-class="t1.synchroController ? 'checkmark-icon' : 'cross-icon'"></p>
+
+                </div>
+                <br><br>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div ng-if="data.labRequestStates.length > 0">
+          <button class="collapsible" ng-click="handleClick($event)">Egel Requests</button>
+          <div class="content">
+            <div data-ng-repeat="state in data.labRequestStates">
+              <button class="collapsible" ng-click="handleClick($event)">Egel Request processed on {{state.processingDate}}</button>
+              <div class="content">
+                <p>Uuid : {{state.labRequestDTOId.labRequestUuid}}</p>
+                <p>Id : {{state.labRequestDTOId.id}}</p>
+                <p>Label : {{state.labRequestDTOId.label}}</p>
+                <p>Number : {{state.labRequestDTOId.number}}</p>
+
+                <button class="collapsible">State of Processing : {{state.state}}</button>
+                <br><br>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div ng-if="data.vaccinationStates.length > 0">
+          <button class="collapsible" ng-click="handleClick($event)">Vaccinations</button>
+          <div class="content">
+            <div data-ng-repeat="vaccin in data.vaccinationStates">
+              <button class="collapsible" ng-click="handleClick($event)">Vaccination processed on {{vaccin.processingDate}}</button>
+              <div class="content">
+                <p>Rrnr : {{vaccin.vaccinationDTOId.rrnr}}</p>
+                <p>CnkCode : {{vaccin.vaccinationDTOId.cnkCode}}</p>
+                <p>Vaccine Name : {{vaccin.vaccinationDTOId.vaccineName}}</p>
+
+                <button class="collapsible">State of Processing : <span ng-class="vaccin.done ? 'checkmark-icon' : 'cross-icon'"></button>
+                <br><br>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <br><br>
+      </div>
+
+    </div>
+  </div>
+</div>

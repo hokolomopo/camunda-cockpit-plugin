@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cockpit.sample">
+
+  <resultMap id="processInstanceCountMap" type="org.camunda.bpm.cockpit.plugin.sample.db.ProcessInstanceCountDto">
+    <result property="key" column="KEY_" jdbcType="VARCHAR" />
+    <result property="instanceCount" column="INSTANCES_" jdbcType="INTEGER" />
+  </resultMap>
+
+  <select id="selectProcessInstanceCountsByProcessDefinition" resultMap="processInstanceCountMap">
+    select d.KEY_, count(d.KEY_) INSTANCES_
+      from ACT_RU_EXECUTION e JOIN ACT_RE_PROCDEF d ON e.PROC_DEF_ID_ = d.ID_
+      where KEY_ = #{parameter.key}
+      group by d.KEY_
+  </select>
+
+  <resultMap id="ProcessInstanceFromRootMap" type="org.camunda.bpm.cockpit.plugin.sample.db.ProcessInstanceFromRootDto">
+    <result property="id" column="PROC_INST_ID_" jdbcType="VARCHAR" />
+    <result property="processDefinitionKey" column="PROC_DEF_KEY_" jdbcType="VARCHAR" />
+  </resultMap>
+
+  <select id="selectProcessInstanceByRootAndVariableRuntime" resultMap="ProcessInstanceFromRootMap">
+  select act_hi_procinst.PROC_INST_ID_, PROC_DEF_KEY_ from act_ru_variable join act_hi_procinst on act_hi_procinst.PROC_INST_ID_ = act_ru_variable.PROC_INST_ID_
+      where 1=1
+    <if test="parameter.varName != null">
+      and NAME_= #{parameter.varName}
+    </if>
+    <if test="parameter.varValue != null">
+      and TEXT_ = #{parameter.varValue}
+    </if>
+    <if test="parameter.rootId != null">
+      and ROOT_PROC_INST_ID_ = #{parameter.rootId}
+    </if>
+    ;
+  </select>
+
+  <select id="selectProcessInstanceByRootAndVariableHistory" resultMap="ProcessInstanceFromRootMap">
+    select PROC_INST_ID_, PROC_DEF_KEY_ from act_hi_varinst
+    where 1=1
+    <if test="parameter.varName != null">
+      and NAME_= #{parameter.varName}
+    </if>
+    <if test="parameter.varValue != null">
+      and TEXT_ = #{parameter.varValue}
+    </if>
+    <if test="parameter.rootId != null">
+      and ROOT_PROC_INST_ID_ = #{parameter.rootId}
+    </if>
+    <if test="parameter.processKey != null">
+      and PROC_DEF_KEY_ = #{parameter.processKey}
+    </if>
+    group by PROC_INST_ID_, PROC_DEF_KEY_;
+  </select>
+
+</mapper>
