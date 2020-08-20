@@ -1,79 +1,71 @@
-/*
- * Copyright Camunda Services GmbH and/or licensed to Camunda Services GmbH
- * under one or more contributor license agreements. See the NOTICE file
- * distributed with this work for additional information regarding copyright
- * ownership. Camunda licenses this file to you under the Apache License,
- * Version 2.0; you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.camunda.bpm.cockpit.plugin.sample.resources;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-
 import be.yelido.camunda.module.data.ids.*;
-import org.camunda.bpm.cockpit.db.QueryParameters;
 import org.camunda.bpm.cockpit.plugin.resource.AbstractCockpitPluginResource;
-import org.camunda.bpm.cockpit.plugin.sample.db.ProcessInstanceCountDto;
 import org.camunda.bpm.cockpit.plugin.sample.db.ProcessInstanceFromRootDto;
-import org.camunda.bpm.cockpit.plugin.sample.progress.IntegrationAuditableT0State;
-import org.camunda.bpm.cockpit.plugin.sample.progress.IntegrationAuditableT1State;
-import org.camunda.bpm.cockpit.plugin.sample.progress.IntegrationLabRequestState;
-import org.camunda.bpm.cockpit.plugin.sample.progress.IntegrationVaccinationState;
-import org.camunda.bpm.cockpit.plugin.sample.util.Convertor;
-import org.camunda.bpm.cockpit.plugin.sample.util.MatchingUtil;
-import org.camunda.bpm.cockpit.plugin.sample.util.ProcessInstanceFromRootQuery;
+import org.camunda.bpm.cockpit.plugin.sample.db.ProcessInstanceFromRootQuery;
+import org.camunda.bpm.cockpit.plugin.sample.state.*;
+import org.camunda.bpm.cockpit.plugin.sample.util.Converter;
+import org.camunda.bpm.cockpit.plugin.sample.util.MatchingClass;
 import org.camunda.bpm.cockpit.plugin.sample.util.RequestsUtil;
-import org.camunda.bpm.cockpit.plugin.sample.progress.JioIntegrationState;
 import org.camunda.bpm.engine.history.HistoricActivityInstance;
 import org.camunda.bpm.engine.history.HistoricProcessInstance;
 import org.camunda.bpm.engine.history.HistoricVariableInstance;
 
-/**
- *
- * @author nico.rehwaldt
- */
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+
 public class SearchResource extends AbstractCockpitPluginResource {
 
+  /**
+   * Instantiates a new Search resource.
+   *
+   * @param engineName the name of the BPMN engine
+   */
   public SearchResource(String engineName) {
     super(engineName);
   }
 
-  @GET
-  public List<ProcessInstanceCountDto> getProcessInstanceCounts() {
 
-    return getQueryService()
-        .executeQuery(
-          "cockpit.sample.selectProcessInstanceCountsByProcessDefinition",
-          new QueryParameters<ProcessInstanceCountDto>());
-  }
-
-  // After = FINISHED after
-  // Before = BEGAN before
+  /**
+   * Search for a variable in the Camunda database and return the state of all the processes that contains this variable.
+   *
+   * @param varName      the variable name
+   * @param varValue     the variable value
+   * @param beforeString the lower bound date for the search as a String
+   * @param afterString  the upper bound date for the search as a String
+   * @return the state of the processes instances that contain the variable searched
+   */
   @GET
   @Path("/searchVariable")
   @Produces("application/json")
   public ArrayList<JioIntegrationState> searchFromVariable(@QueryParam("varName") String varName, @QueryParam("varValue") String varValue,
-                                                           @QueryParam("before") Date before, @QueryParam("after") Date after) {
+                                                           @QueryParam("before") String beforeString, @QueryParam("after") String afterString) throws ParseException {
 
     ArrayList<JioIntegrationState> replyList = new ArrayList<>();
 
+    SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd yyyy", Locale.ENGLISH);
+
+    Date before = null;
+    if(beforeString != null)
+      before = dateFormat.parse(beforeString);
+
+    Date after = null;
+    if(afterString != null)
+      after = dateFormat.parse(afterString);
+
     // Get all processes instances with matching variables
-    List<HistoricProcessInstance> processInstanceList = RequestsUtil.getProcessFromVariable(varName, varValue, before, after, getProcessEngine());
+    List<HistoricProcessInstance> processInstanceList = RequestsUtil.getProcessFromVariable(varName, varValue,
+            before, after, getProcessEngine());
 
     // Get the root processes for all the processes instances
     List<String> rootProcesses = RequestsUtil.getAllRootProcesses(processInstanceList);
@@ -88,6 +80,7 @@ public class SearchResource extends AbstractCockpitPluginResource {
       ProcessInstanceFromRootQuery processInstanceFromRootQuery = ProcessInstanceFromRootQuery.createQuery().rootProcessId(rootProcessId).build();
       List<ProcessInstanceFromRootDto> processInstanceFromRootList = RequestsUtil.getProcessInstanceFromRootAndVar(processInstanceFromRootQuery, getQueryService());
 
+
       //State of JIO Upload process
       getJioUploadState(processInstanceFromRootList, jioIntegrationState);
 
@@ -97,6 +90,8 @@ public class SearchResource extends AbstractCockpitPluginResource {
       //State of Lab Requests
       getEgelStates(processInstanceFromRootList, jioIntegrationState);
 
+      // State of Legacy Processor
+      getLegacyProcessorState(processInstanceFromRootList, jioIntegrationState);
 
       jioIntegrationState.updateMergeState();
     }
@@ -104,6 +99,7 @@ public class SearchResource extends AbstractCockpitPluginResource {
     return replyList;
   }
 
+  // Get the state of the JIO Upload service
   private void getJioUploadState(List<ProcessInstanceFromRootDto> processes, JioIntegrationState jioState){
 
     ProcessInstanceFromRootDto jioUploadInstance = processes.stream().filter(p -> p.getProcessDefinitionKey().equals("JIO_Upload")).findFirst().orElse(null);
@@ -117,12 +113,12 @@ public class SearchResource extends AbstractCockpitPluginResource {
     //---------------- Process AuditableT0 ----------------//
 
     // Get variables of the AuditableT0
-    AuditableT0Id t0Id = Convertor.convert(jioUploadVariables, AuditableT0Id.class);
+    AuditableT0Id t0Id = Converter.convert(jioUploadVariables, AuditableT0Id.class);
 
     // Get state of integration of the AuditableT0
     HistoricActivityInstance integrateT0RootActivity = jioUploadActivities.stream().filter(a -> a.getActivityId().equals("AuditableT0_Integrate_process")).findFirst().get();
     List<HistoricActivityInstance> integrateT0Activities = jioUploadActivities.stream().filter(a -> a.getParentActivityInstanceId().equals(integrateT0RootActivity.getId())).collect(Collectors.toList());
-    IntegrationAuditableT0State integrationT0State = MatchingUtil.matchSimpleProcess(integrateT0Activities, IntegrationAuditableT0State.class);
+    IntegrationAuditableT0State integrationT0State = MatchingClass.matchSimpleProcess(integrateT0Activities, IntegrationAuditableT0State.class);
 
     integrationT0State.setAuditableT0Id(t0Id);
     integrationT0State.setProcessingDate(integrateT0RootActivity.getStartTime());
@@ -138,11 +134,11 @@ public class SearchResource extends AbstractCockpitPluginResource {
 
       // Get variables for this process instance
       List<HistoricVariableInstance> integrateT1Variables = jioUploadVariables.stream().filter(v -> v.getActivityInstanceId().equals(act.getId())).collect(Collectors.toList());
-      AuditableT1Id id = Convertor.convert(integrateT1Variables, AuditableT1Id.class);
+      AuditableT1Id id = Converter.convert(integrateT1Variables, AuditableT1Id.class);
 
       // Get state of integration for this process instance
       List<HistoricActivityInstance> integrateT1Activities = jioUploadActivities.stream().filter(a -> a.getParentActivityInstanceId().equals(act.getId())).collect(Collectors.toList());
-      IntegrationAuditableT1State state = MatchingUtil.matchSimpleProcess(integrateT1Activities, IntegrationAuditableT1State.class);
+      IntegrationAuditableT1State state = MatchingClass.matchSimpleProcess(integrateT1Activities, IntegrationAuditableT1State.class);
       state.setAuditableT1Id(id);
       state.setProcessingDate(act.getStartTime());
       state.setProcessId(act.getProcessInstanceId());
@@ -152,6 +148,7 @@ public class SearchResource extends AbstractCockpitPluginResource {
     }
   }
 
+  // Get the state of the Vaccinnet Processor service
   private void getVaccinationStates(List<ProcessInstanceFromRootDto> processes, JioIntegrationState jioState){
     List<ProcessInstanceFromRootDto> vaccineProcesses = processes.stream().filter(p -> p.getProcessDefinitionKey().equals("Vaccinnet_Processor")).collect(Collectors.toList());
 
@@ -159,10 +156,10 @@ public class SearchResource extends AbstractCockpitPluginResource {
       List<HistoricVariableInstance> vaccineProcessVariables = RequestsUtil.getAllVariablesSorted(vaccineProcess.getId(), getProcessEngine());
       List<HistoricActivityInstance> vaccineProcessActivities = getProcessEngine().getHistoryService().createHistoricActivityInstanceQuery().processInstanceId(vaccineProcess.getId()).list();
 
-      VaccinationDTOId id = Convertor.convert(vaccineProcessVariables, VaccinationDTOId.class);
+      VaccinationDTOId id = Converter.convert(vaccineProcessVariables, VaccinationDTOId.class);
 
       // Get state of integration for this process instance
-      IntegrationVaccinationState state = MatchingUtil.matchSimpleProcess(vaccineProcessActivities, IntegrationVaccinationState.class);
+      IntegrationVaccinationState state = MatchingClass.matchSimpleProcess(vaccineProcessActivities, IntegrationVaccinationState.class);
       state.setVaccinationDTOId(id);
       state.setProcessingDate(vaccineProcessActivities.get(0).getStartTime());
       state.setProcessId(vaccineProcess.getId());
@@ -174,6 +171,7 @@ public class SearchResource extends AbstractCockpitPluginResource {
 
   }
 
+  // Get the state of the Egel Processor Service
   private void getEgelStates(List<ProcessInstanceFromRootDto> processes, JioIntegrationState jioState){
 
     ProcessInstanceFromRootDto egeProcessorInstance = processes.stream().filter(p -> p.getProcessDefinitionKey().equals("Egel_Processor")).findFirst().orElse(null);
@@ -184,30 +182,37 @@ public class SearchResource extends AbstractCockpitPluginResource {
     List<HistoricVariableInstance> egeProcessorVariables = RequestsUtil.getAllVariablesSorted(egeProcessorInstance.getId(), getProcessEngine());
     List<HistoricActivityInstance> egeProcessorActivities = getProcessEngine().getHistoryService().createHistoricActivityInstanceQuery().processInstanceId(egeProcessorInstance.getId()).list();
 
-    ProcessInstanceFromRootDto processWorkerInstance = processes.stream().filter(p -> p.getProcessDefinitionKey().equals("Process_Worker")).findFirst().orElse(null);
-    List<HistoricVariableInstance> processWorkerVariables = RequestsUtil.getAllVariablesSorted(processWorkerInstance.getId(), getProcessEngine());
-
-    //---------------- Process AuditableT1s ----------------//
-    // Get all sub-processes integrating AuditableT1s
+    // Get all sub-processes "Create new Request"
     List<HistoricActivityInstance> createLabRequestActivities = egeProcessorActivities.stream().filter(a -> a.getActivityId().equals("New_Lab_Request")).collect(Collectors.toList());
     for (HistoricActivityInstance act : createLabRequestActivities) {
 
       // Get variables for this process instance
       List<HistoricVariableInstance> newLabRequestVariables = egeProcessorVariables.stream().filter(v -> v.getActivityInstanceId().equals(act.getId())).collect(Collectors.toList());
-      LabRequestDTOId id = Convertor.convert(newLabRequestVariables, LabRequestDTOId.class);
+      LabRequestDTOId id = Converter.convert(newLabRequestVariables, LabRequestDTOId.class);
 
       // Get state of integration for this process instance
       List<HistoricActivityInstance> newLabRequestActivities = egeProcessorActivities.stream().filter(a -> a.getParentActivityInstanceId().equals(act.getId())).collect(Collectors.toList());
       IntegrationLabRequestState state = new IntegrationLabRequestState();
       HistoricActivityInstance createNewLabRequestActivity = newLabRequestActivities.stream().filter(a -> a.getActivityId().equals("Create_new_lab_request")).findFirst().orElse(null);
-      if(createNewLabRequestActivity == null)
+
+      if(createNewLabRequestActivity == null || id == null)
         state.setState("NOT CREATED");
       else{
-        HistoricVariableInstance labRequestUuidVariable = processWorkerVariables.stream().filter(v -> v.getValue().equals(id.getLabRequestUuid())).findFirst().orElse(null);
-        HistoricVariableInstance labRequestStatusVariable = processWorkerVariables.stream()
-                .filter(v -> v.getName().equals("labRequestStatus") && v.getActivityInstanceId().equals(labRequestUuidVariable.getActivityInstanceId()))
-                .findFirst().orElse(null);
-        state.setState((String)labRequestStatusVariable.getValue());
+
+        // There will be 2 labRequestUuid variables : one in the "Create New Request" sub-process, and one in the "Egel request" sub-process, we want the one from the Egel
+        // Request process, thus the filter on the activity Id
+        HistoricVariableInstance labRequestUuidVariable = egeProcessorVariables.stream().filter(v -> v.getValue().equals(id.getLabRequestUuid()) && !v.getActivityInstanceId().equals(act.getId())).findFirst().orElse(null);
+        if(labRequestUuidVariable == null)
+          state.setState("Unknown");
+        else{
+          HistoricVariableInstance labRequestStatusVariable = egeProcessorVariables.stream()
+                  .filter(v -> v.getName().equals("labRequestStatus") && v.getActivityInstanceId().equals(labRequestUuidVariable.getActivityInstanceId()))
+                  .findFirst().orElse(null);
+          if(labRequestStatusVariable == null)
+            state.setState("Unknown");
+          else
+            state.setState((String)labRequestStatusVariable.getValue());
+        }
       }
 
       state.setLabRequestDTOId(id);
@@ -219,77 +224,28 @@ public class SearchResource extends AbstractCockpitPluginResource {
     }
   }
 
+  // Get the state of the Legacy Processor
+  private void getLegacyProcessorState(List<ProcessInstanceFromRootDto> processes, JioIntegrationState jioState){
 
-  @GET
-  @Path("/test")
-  @Produces("application/json")
-  public ArrayList<JioIntegrationState> getTest(@QueryParam("test") String test) {
+    List<ProcessInstanceFromRootDto> legacyProcesses = processes.stream().filter(p -> p.getProcessDefinitionKey().equals("Legacy_Processor")).collect(Collectors.toList());
 
-    ArrayList<JioIntegrationState> list = new ArrayList<>();
-//    list.add(getReply());
-//    list.add(getReply());
+    for(ProcessInstanceFromRootDto legacyProcess : legacyProcesses){
+      List<HistoricVariableInstance> legacyProcessVariables = RequestsUtil.getAllVariablesSorted(legacyProcess.getId(), getProcessEngine());
+      List<HistoricActivityInstance> legacyProcessActivities = getProcessEngine().getHistoryService().createHistoricActivityInstanceQuery().processInstanceId(legacyProcess.getId()).list();
 
-    return list;
-//    return "[{\"string\":\"0\"},{\"string\":\"1\"}]";
+      ToProcessLegacyDTOId id = Converter.convert(legacyProcessVariables, ToProcessLegacyDTOId.class);
+
+      // Get state of integration for this process instance
+      IntegrationLegacyProcessorState state = MatchingClass.matchSimpleProcess(legacyProcessActivities, IntegrationLegacyProcessorState.class);
+      state.setToProcessLegacyDTOId(id);
+      state.setProcessingDate(legacyProcessActivities.get(0).getStartTime());
+      state.setProcessId(legacyProcess.getId());
+      state.updateMergeState();
+
+      jioState.getLegacyProcessorStates().add(state);
+
+    }
   }
 
-  //TODO delete this
-//  private JioIntegrationState getReply(){
-//    JioIntegrationState reply = new JioIntegrationState();
-//
-//    IntegrationAuditableT0State t0State = new IntegrationAuditableT0State();
-//    t0State.setAuditableT0Id(new AuditableT0Id("0", "0", "0", "Jean"));
-//    t0State.setProcessingDate(Calendar.getInstance().getTime());
-//    t0State.setFullyMerged(true);
-//    t0State.setAuditableMerged(true);
-//    t0State.setDaoMerged(true);
-//    t0State.setPostitUpdated(true);
-//    reply.setAuditableT0State(t0State);
-//
-//    ArrayList<IntegrationAuditableT1State> listT1 = new ArrayList<>();
-//
-//    IntegrationAuditableT1State state = new IntegrationAuditableT1State();
-//    state.setAuditableT1Id(new AuditableT1Id("1", "1", "1", "Jean", "1"));
-//    state.setProcessingDate(Calendar.getInstance().getTime());
-//    listT1.add(state);
-//
-//    state = new IntegrationAuditableT1State();
-//    state.setAuditableT1Id(new AuditableT1Id("2", "2", "2", "Roger", "2"));
-//    state.setProcessingDate(Calendar.getInstance().getTime());
-//    listT1.add(state);
-//
-//    reply.setAuditableT1States(listT1);
-//
-//
-//    ArrayList<IntegrationLabRequestState> listEgel = new ArrayList<>();
-//    IntegrationLabRequestState egelState = new IntegrationLabRequestState();
-//    egelState.setLabRequestDTOId(new ToProcessEgeld("1", "José"));
-//    egelState.setProcessingDate(Calendar.getInstance().getTime());
-//    listEgel.add(egelState);
-//
-//    egelState = new IntegrationLabRequestState();
-//    egelState.setLabRequestDTOId(new ToProcessEgeld("1", "André"));
-//    egelState.setProcessingDate(Calendar.getInstance().getTime());
-//    listEgel.add(egelState);
-//
-//    reply.setEgelStates(listEgel);
-//
-//    ArrayList<IntegrationVaccinationState> listVacc = new ArrayList<>();
-//    IntegrationVaccinationState vaccinationState = new IntegrationVaccinationState();
-//    vaccinationState.setVaccinationDTOId(new VaccinationDTOId("1", "135","Polio"));
-//    vaccinationState.setDone(true);
-//    vaccinationState.setProcessingDate(Calendar.getInstance().getTime());
-//    listVacc.add(vaccinationState);
-//
-//    vaccinationState = new IntegrationVaccinationState();
-//    vaccinationState.setVaccinationDTOId(new VaccinationDTOId("1", "135","Polio"));
-//    vaccinationState.setDone(true);
-//    vaccinationState.setProcessingDate(Calendar.getInstance().getTime());
-//    listVacc.add(vaccinationState);
-//
-//    reply.setVaccinationStates(listVacc);
-//
-//    return reply;
-//  }
 
 }

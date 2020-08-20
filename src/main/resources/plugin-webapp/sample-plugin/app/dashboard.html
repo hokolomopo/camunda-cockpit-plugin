@@ -27,7 +27,6 @@
   }
 
   .collapsible {
-    background-color: #777;
     color: white;
     cursor: pointer;
     padding: 18px;
@@ -35,10 +34,16 @@
     border: none;
     text-align: left;
     outline: none;
-    font-size: 15px;
+    font-size: 18px;
+    background-color: #777;
+    margin-bottom:1px;
   }
 
-  .active, .collapsible:hover {
+  .gray {
+    background-color: #777;
+  }
+
+  .active, .gray:hover {
     background-color: #555;
   }
 
@@ -48,6 +53,7 @@
     overflow: hidden;
     background-color: #f1f1f1;
   }
+
 
   .checkmark-icon {
     display:inline-block;
@@ -94,66 +100,108 @@
     background-color:red;
   }
 
+  .split-para      { display:block;}
+  .split-para span { display:block;float:right;}
+
+  hr {
+    width: 100%;
+    background-color:#DCDCDC;
+    height: 1px;
+  }
+
 </style>
 
 <div>
 
   <div class="modal-body">
-    <select ng-model="varName">
-      <option value="rrnr">Rrnr</option>
-      <option value="uuid">Uuid</option>
-      <option value="nameT0">Name (AuditableT0)</option>
-      <option value="nameT1">Name (AuditableT1)</option>
-      <option value="auditorId">Auditor Id</option>
-      <option value="auditorId">Auditor Id</option>
-    </select>
-    <input ng-model="varValue" type="text"/>
-    <button ng-click="submit()" class="favorite styled"  type="button">
-      Search
-    </button>
+    <div>
+      <label for="varName">Variable Searched : </label>
+      <select ng-model="varName" id="varName">
+        <option value="rrnr">Rrnr</option>
+        <option value="uuid">Uuid</option>
+        <option value="nameT0">Name (AuditableT0)</option>
+        <option value="nameT1">Name (AuditableT1)</option>
+        <option value="auditorId">Auditor Id</option>
+      </select>
+      <input ng-model="varValue" type="text"/>
+    </div>
+
+    <label for="dateRange">Include Date Range : </label>
+    <input type="checkbox" id="dateRange" ng-model="dateRange"
+           checked>
+
+    <div ng-hide="dateRange == false">
+      <label for="after">Processed Between : </label>
+      <input type="date" id="after" ng-model="after"
+             value="2020-01-01">
+      -
+      <input ng-model="before" type="date">
+    </div>
+    <div>
+      <button ng-click="submit()" class="favorite styled"  type="button">
+        Search
+      </button>
+    </div>
   </div>
 
   <div>
     <div data-ng-repeat="data in stateData">
-      <button class="collapsible" ng-click="handleClick($event)">AuditableT0 processed on {{data.auditableT0State.processingDate}}    <span ng-class="data.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></span> </button>
+      <button class="collapsible" ng-click="handleClick($event)">JIO processed on {{data.auditableT0State.processingDate | date:'medium'}} </button>
       <div class="content">
-        <p>Uuid : {{data.auditableT0State.auditableT0Id.uuidT0}}</p>
-        <p>userId : {{data.auditableT0State.auditableT0Id.userId}}</p>
-        <p>wgnr : {{data.auditableT0State.auditableT0Id.wgnr}}</p>
-        <p>Name : {{data.auditableT0State.auditableT0Id.nameT0}}</p>
 
+        <p><b>Auditor Id</b> : {{data.auditableT0State.auditableT0Id.userId}}</p>
 
-        <button class="collapsible" ng-click="handleClick($event)">State of Processing :  <span ng-class="data.auditableT0State.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></span></button>
+        <button class="collapsible split-para" ng-click="handleClick($event)">AuditableT0 <span ng-class="data.auditableT0State.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></button>
         <div class="content">
-          <p>Auditable Merged :  <span ng-class="data.auditableT0State.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></span></p>
-          <p>Dao Merged :  <span ng-class="data.auditableT0State.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></span></p>
-          <p>Postits Updated : <span ng-class="data.auditableT0State.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></span></p>
+          <p><b>Uuid</b> : {{data.auditableT0State.auditableT0Id.uuidT0}}</p>
+          <p><b>userId</b> : {{data.auditableT0State.auditableT0Id.userId}}</p>
+          <p><b>wgnr</b> : {{data.auditableT0State.auditableT0Id.wgnr}}</p>
+          <p><b>Name</b> : {{data.auditableT0State.auditableT0Id.nameT0}}</p>
+
+          <button class="collapsible split-para" ng-click="handleClick($event)">State of Processing :  <span ng-class="data.auditableT0State.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></button>
+          <div class="content">
+            <hr>
+            <p class="split-para">Auditable Merged :  <span ng-class="data.auditableT0State.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></span></p>
+            <hr>
+            <p class="split-para">Dao Merged :  <span ng-class="data.auditableT0State.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></span></p>
+            <hr>
+            <p class="split-para">Postits Updated : <span ng-class="data.auditableT0State.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></span></p>
+            <hr>
+          </div>
         </div>
-        <br><br>
+
+        <!--<br><br>-->
 
         <div ng-if="data.auditableT1States.length > 0">
           <button class="collapsible" ng-click="handleClick($event)">AuditableT1s</button>
           <div class="content">
             <div data-ng-repeat="t1 in data.auditableT1States">
-              <button class="collapsible" ng-click="handleClick($event)">AuditableT1 processed on {{t1.processingDate}}</button>
+              <button class="collapsible split-para" ng-click="handleClick($event)">AuditableT1 for RrNr {{t1.auditableT1Id.rrnr}}<span ng-class="t1.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></button>
               <div class="content">
-                <p>Uuid : {{t1.auditableT1Id.uuidT1}}</p>
-                <p>Rrnr : {{t1.auditableT1Id.rrnr}}</p>
-                <p>Sis Number : {{t1.auditableT1Id.sisnumber}}</p>
-                <p>Name : {{t1.auditableT1Id.nameT1}}</p>
-                <p>Wn Number : {{t1.auditableT1Id.wnnumber}}</p>
+                <p><b>Uuid</b> : {{t1.auditableT1Id.uuidT1}}</p>
+                <p><b>Rrnr</b> : {{t1.auditableT1Id.rrnr}}</p>
+                <p><b>Sis Number</b> : {{t1.auditableT1Id.sisnumber}}</p>
+                <p><b>Name</b> : {{t1.auditableT1Id.nameT1}}</p>
+                <p><b>Wn Number</b> : {{t1.auditableT1Id.wnnumber}}</p>
 
-                <button class="collapsible" ng-click="handleClick($event)">State of Processing : <span ng-class="t1.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></button>
+                <button class="collapsible split-para" ng-click="handleClick($event)">State of Processing : <span ng-class="t1.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></button>
                 <div class="content">
-                  <p>Auditable Merged :  <span ng-class="t1.auditableMerged ? 'checkmark-icon' : 'cross-icon'"></p>
-                  <p>Dao Merged :  <span ng-class="t1.daoMerged ? 'checkmark-icon' : 'cross-icon'"></p>
-                  <p>Postits Updated :  <span ng-class="t1.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></p>
-                  <p>Reports Updated :  <span ng-class="t1.reportsUpdated ? 'checkmark-icon' : 'cross-icon'"></p>
-                  <p>ReintegrationController done :  <span ng-class="t1.reintegrationController ? 'checkmark-icon' : 'cross-icon'"></p>
-                  <p>SynchroController Done :  <span ng-class="t1.synchroController ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Auditable Merged :  <span ng-class="t1.auditableMerged ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Dao Merged :  <span ng-class="t1.daoMerged ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Postits Updated :  <span ng-class="t1.postitUpdated ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Reports Updated :  <span ng-class="t1.reportsUpdated ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">ReintegrationController done :  <span ng-class="t1.reintegrationController ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">SynchroController Done :  <span ng-class="t1.synchroController ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
 
                 </div>
-                <br><br>
+                <!--<br><br>-->
               </div>
             </div>
           </div>
@@ -163,15 +211,15 @@
           <button class="collapsible" ng-click="handleClick($event)">Egel Requests</button>
           <div class="content">
             <div data-ng-repeat="state in data.labRequestStates">
-              <button class="collapsible" ng-click="handleClick($event)">Egel Request processed on {{state.processingDate}}</button>
+              <button class="collapsible split-para" ng-click="handleClick($event)">Egel Request with id {{state.labRequestDTOId.id}} <span><b>Status : {{state.state}}</b></span></button>
               <div class="content">
-                <p>Uuid : {{state.labRequestDTOId.labRequestUuid}}</p>
-                <p>Id : {{state.labRequestDTOId.id}}</p>
-                <p>Label : {{state.labRequestDTOId.label}}</p>
-                <p>Number : {{state.labRequestDTOId.number}}</p>
+                <p><b>Id</b> : {{state.labRequestDTOId.id}}</p>
+                <p><b>Label</b> : {{state.labRequestDTOId.label}}</p>
+                <p><b>Number</b> : {{state.labRequestDTOId.number}}</p>
 
-                <button class="collapsible">State of Processing : {{state.state}}</button>
-                <br><br>
+                <hr>
+                <p><b>Status of request </b> : {{state.state}}</p>
+                <!--<br><br>-->
               </div>
             </div>
           </div>
@@ -181,20 +229,58 @@
           <button class="collapsible" ng-click="handleClick($event)">Vaccinations</button>
           <div class="content">
             <div data-ng-repeat="vaccin in data.vaccinationStates">
-              <button class="collapsible" ng-click="handleClick($event)">Vaccination processed on {{vaccin.processingDate}}</button>
+              <button class="collapsible split-para" ng-click="handleClick($event)">Vaccination with RrNr {{vaccin.vaccinationDTOId.rrnr}} <span ng-class="vaccin.done ? 'checkmark-icon' : 'cross-icon'"></button>
               <div class="content">
-                <p>Rrnr : {{vaccin.vaccinationDTOId.rrnr}}</p>
-                <p>CnkCode : {{vaccin.vaccinationDTOId.cnkCode}}</p>
-                <p>Vaccine Name : {{vaccin.vaccinationDTOId.vaccineName}}</p>
+                <p><b>Rrnr</b> : {{vaccin.vaccinationDTOId.rrnr}}</p>
+                <p><b>CnkCode</b> : {{vaccin.vaccinationDTOId.cnkCode}}</p>
+                <p><b>Vaccine Name</b> : {{vaccin.vaccinationDTOId.vaccineName}}</p>
 
-                <button class="collapsible">State of Processing : <span ng-class="vaccin.done ? 'checkmark-icon' : 'cross-icon'"></button>
-                <br><br>
+                <hr>
+                <p class="split-para"><b>State of Processing</b> :  <span ng-class="vaccin.done ? 'checkmark-icon' : 'cross-icon'"></p>
+                <!--<br><br>-->
               </div>
             </div>
           </div>
         </div>
 
-        <br><br>
+        <div ng-if="data.legacyProcessorStates.length > 0">
+          <button class="collapsible" ng-click="handleClick($event)">ToProcessLegacyDto</button>
+          <div class="content">
+            <div data-ng-repeat="state in data.legacyProcessorStates">
+              <button class="collapsible split-para" ng-click="handleClick($event)">ToProcessLegacyDto with RrNr {{state.toProcessLegacyDTOId.rrnr}}<span ng-class="state.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></button>
+              <div class="content">
+                <p><b>User Id</b> : {{state.toProcessLegacyDTOId.userId}}</p>
+                <p><b>Rrnr</b> : {{state.toProcessLegacyDTOId.rrnr}}</p>
+
+                <button class="collapsible split-para" ng-click="handleClick($event)">State of Processing : <span ng-class="state.fullyMerged ? 'checkmark-icon' : 'cross-icon'"></button>
+                <div class="content">
+                  <hr>
+                  <p class="split-para">Administrative Processor :  <span ng-class="state.administrativeProcessor ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Hazard Processor :  <span ng-class="state.hazardProcessor ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Hepatitis Processor :  <span ng-class="state.hepatitisProcessor ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Inability Processor :  <span ng-class="state.inabilityProcessor ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Inactivity Processor :  <span ng-class="state.inactivityProcessor ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Prestation Processor :  <span ng-class="state.prestationProcessor ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Service Processor :  <span ng-class="state.serviceProcessor ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+                  <p class="split-para">Reintegration Processor :  <span ng-class="state.reintegrationProcessor ? 'checkmark-icon' : 'cross-icon'"></p>
+                  <hr>
+
+                </div>
+                <!--<br><br>-->
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!--<br><br>-->
       </div>
 
     </div>

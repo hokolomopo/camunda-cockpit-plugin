@@ -1,4 +1,4 @@
-package org.camunda.bpm.cockpit.plugin.sample.progress;
+package org.camunda.bpm.cockpit.plugin.sample.state;
 
 import lombok.Data;
 
@@ -11,6 +11,7 @@ public class JioIntegrationState extends IntegrationState {
     private List<IntegrationAuditableT1State> auditableT1States = new ArrayList<>();
     private List<IntegrationLabRequestState> labRequestStates = new ArrayList<>();
     private List<IntegrationVaccinationState> vaccinationStates = new ArrayList<>();
+    private List<IntegrationLegacyProcessorState> legacyProcessorStates = new ArrayList<>();
 
     @Override
     public void updateMergeState() {
@@ -20,6 +21,8 @@ public class JioIntegrationState extends IntegrationState {
         for(IntegrationLabRequestState s : labRequestStates)
             fullyMerged &= s.isFullyMerged();
         for(IntegrationVaccinationState s : vaccinationStates)
+            fullyMerged &= s.isFullyMerged();
+        for(IntegrationLegacyProcessorState s : legacyProcessorStates)
             fullyMerged &= s.isFullyMerged();
     }
 }

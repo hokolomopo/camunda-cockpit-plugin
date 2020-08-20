@@ -1,4 +1,4 @@
-package org.camunda.bpm.cockpit.plugin.sample.progress;
+package org.camunda.bpm.cockpit.plugin.sample.state;
 
 import be.yelido.camunda.module.data.ids.AuditableT1Id;
 import lombok.Data;
@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-public class IntegrationAuditableT1State extends IntegrationState implements SimpleMathProcess{
+public class IntegrationAuditableT1State extends IntegrationState implements ProcessState {
 
     private AuditableT1Id auditableT1Id = null;
     private Date processingDate = null;

@@ -1,8 +1,6 @@
-package org.camunda.bpm.cockpit.plugin.sample.progress;
+package org.camunda.bpm.cockpit.plugin.sample.state;
 
-import be.yelido.camunda.module.data.ids.AuditableT0Id;
 import be.yelido.camunda.module.data.ids.LabRequestDTOId;
-import be.yelido.camunda.module.data.ids.ToProcessEgeld;
 import lombok.Data;
 
 import java.util.Date;

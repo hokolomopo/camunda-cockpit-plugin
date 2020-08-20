@@ -2,13 +2,11 @@ package org.camunda.bpm.cockpit.plugin.sample;
 
 import org.camunda.bpm.cockpit.plugin.sample.resources.SearchResource;
 import org.camunda.bpm.cockpit.plugin.sample.util.TestRequestUtils;
-import org.camunda.bpm.cockpit.plugin.sample.progress.JioIntegrationState;
+import org.camunda.bpm.cockpit.plugin.sample.state.JioIntegrationState;
 import org.camunda.bpm.cockpit.plugin.test.AbstractCockpitPluginTest;
 import org.junit.Test;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
 public class TestRequests extends AbstractCockpitPluginTest {
@@ -29,6 +27,7 @@ public class TestRequests extends AbstractCockpitPluginTest {
 //        after = null;
 
         List<JioIntegrationState> states = searchResource.searchFromVariable("rrnr", rrnrValues.get(0), null, null);
+
         System.out.println(states);
     }
 }

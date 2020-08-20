@@ -1,4 +1,4 @@
-package org.camunda.bpm.cockpit.plugin.sample.progress;
+package org.camunda.bpm.cockpit.plugin.sample.state;
 
 import be.yelido.camunda.module.data.ids.VaccinationDTOId;
 import lombok.Data;
@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-public class IntegrationVaccinationState extends IntegrationState implements SimpleMathProcess{
+public class IntegrationVaccinationState extends IntegrationState implements ProcessState {
     private VaccinationDTOId vaccinationDTOId = null;
     private Date processingDate = null;
 

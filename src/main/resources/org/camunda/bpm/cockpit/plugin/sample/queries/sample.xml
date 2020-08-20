@@ -4,18 +4,6 @@
 
 <mapper namespace="cockpit.sample">
 
-  <resultMap id="processInstanceCountMap" type="org.camunda.bpm.cockpit.plugin.sample.db.ProcessInstanceCountDto">
-    <result property="key" column="KEY_" jdbcType="VARCHAR" />
-    <result property="instanceCount" column="INSTANCES_" jdbcType="INTEGER" />
-  </resultMap>
-
-  <select id="selectProcessInstanceCountsByProcessDefinition" resultMap="processInstanceCountMap">
-    select d.KEY_, count(d.KEY_) INSTANCES_
-      from ACT_RU_EXECUTION e JOIN ACT_RE_PROCDEF d ON e.PROC_DEF_ID_ = d.ID_
-      where KEY_ = #{parameter.key}
-      group by d.KEY_
-  </select>
-
   <resultMap id="ProcessInstanceFromRootMap" type="org.camunda.bpm.cockpit.plugin.sample.db.ProcessInstanceFromRootDto">
     <result property="id" column="PROC_INST_ID_" jdbcType="VARCHAR" />
     <result property="processDefinitionKey" column="PROC_DEF_KEY_" jdbcType="VARCHAR" />

@@ -1,19 +1,3 @@
-/*
- * Copyright Camunda Services GmbH and/or licensed to Camunda Services GmbH
- * under one or more contributor license agreements. See the NOTICE file
- * distributed with this work for additional information regarding copyright
- * ownership. Camunda licenses this file to you under the Apache License,
- * Version 2.0; you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.camunda.bpm.cockpit.plugin.sample;
 
 import java.util.HashMap;
@@ -27,7 +11,8 @@ import org.camunda.bpm.cockpit.Cockpit;
 import org.camunda.bpm.cockpit.db.QueryParameters;
 import org.camunda.bpm.cockpit.db.QueryService;
 import org.camunda.bpm.cockpit.plugin.sample.db.ProcessInstanceFromRootDto;
-import org.camunda.bpm.cockpit.plugin.sample.progress.IntegrationAuditableT1State;
+import org.camunda.bpm.cockpit.plugin.sample.db.ProcessInstanceFromRootQuery;
+import org.camunda.bpm.cockpit.plugin.sample.state.IntegrationAuditableT1State;
 import org.camunda.bpm.cockpit.plugin.sample.util.*;
 import org.camunda.bpm.cockpit.plugin.spi.CockpitPlugin;
 import org.camunda.bpm.cockpit.plugin.test.AbstractCockpitPluginTest;
@@ -39,10 +24,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-/**
-*
-* @author nico.rehwaldt
-*/
 @Ignore
 public class TestFunctionality extends AbstractCockpitPluginTest {
 
@@ -131,11 +112,11 @@ public class TestFunctionality extends AbstractCockpitPluginTest {
       List<HistoricActivityInstance> integrateT1RootActivities = jioUploadActivities.stream().filter(a -> a.getActivityId().equals("AuditableT1_Integrate_process")).collect(Collectors.toList());
       for(HistoricActivityInstance act : integrateT1RootActivities){
         List<HistoricVariableInstance> integrateT1Variables = jioUploadVariables.stream().filter(v -> v.getActivityInstanceId().equals(act.getId())).collect(Collectors.toList());
-        AuditableT1Id id = Convertor.convert(integrateT1Variables, AuditableT1Id.class);
+        AuditableT1Id id = Converter.convert(integrateT1Variables, AuditableT1Id.class);
         System.out.println("AuditableT1Id : " + id);
 
         List<HistoricActivityInstance> integrateT1Activities = jioUploadActivities.stream().filter(a -> a.getParentActivityInstanceId().equals(act.getId())).collect(Collectors.toList());
-        IntegrationAuditableT1State state = MatchingUtil.matchSimpleProcess(integrateT1Activities, IntegrationAuditableT1State.class);
+        IntegrationAuditableT1State state = MatchingClass.matchSimpleProcess(integrateT1Activities, IntegrationAuditableT1State.class);
         System.out.println("State : " + state);
 
       }
@@ -144,7 +125,7 @@ public class TestFunctionality extends AbstractCockpitPluginTest {
       List<ProcessInstanceFromRootDto> vaccinesProcesses = processInstanceFromRootList.stream().filter(p -> p.getProcessDefinitionKey().equals("Vaccinnet_Processor")).collect(Collectors.toList());
       for(ProcessInstanceFromRootDto vaccineProcess : vaccinesProcesses){
         List<HistoricVariableInstance> vaccineVariables = getProcessEngine().getHistoryService().createHistoricVariableInstanceQuery().processInstanceId(vaccineProcess.getId()).list();
-        VaccinationDTOId id = Convertor.convertToVaccinationDTO(vaccineVariables);
+        VaccinationDTOId id = Converter.convert(vaccineVariables, VaccinationDTOId.class);
         System.out.println("Vaccination id : " + id);
       }
 

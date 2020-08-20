@@ -1,8 +1,6 @@
-package org.camunda.bpm.cockpit.plugin.sample.progress;
+package org.camunda.bpm.cockpit.plugin.sample.state;
 
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 public abstract class IntegrationState {

@@ -1,4 +1,4 @@
-package org.camunda.bpm.cockpit.plugin.sample.util;
+package org.camunda.bpm.cockpit.plugin.sample.db;
 
 import lombok.Builder;
 import lombok.Data;
